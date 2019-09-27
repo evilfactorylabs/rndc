@@ -4,6 +4,8 @@ Per Sept 26, 2019.
 
 - [ ] Context
 - [ ] Background
+  - [ ] History
+  - [ ] Problem trying to solve
 - [ ] Key Concepts
 - [ ] Core Features
 - [ ] Under the hood
@@ -13,3 +15,4 @@ Per Sept 26, 2019.
   - [ ] Adoption
   - [ ] Alternatives
 - [ ] Conclusion
+- [ ] References
