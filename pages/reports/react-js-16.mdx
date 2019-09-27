@@ -1,0 +1,894 @@
+import Meta from '../../components/Meta'
+
+export const meta = {
+  title: 'React v16 report by evilfactorylabs RNDC',
+  isPublished: true,
+  published: 'Sep 28, 2019',
+  description: 'React is a JavaScript library for building User Interface'
+}
+
+export default ({ children }) => <Meta meta={meta}>{children}</Meta>
+
+# React.js
+
+a JavaScript library for building User Interfaces.
+
+### Latar Belakang
+
+#### Sejarah Singkat
+
+Berawal dari [XHP](https://github.com/hhvm/xhp-lib) oleh Facebook, yakni
+sebuah library untuk membuat "component" di PHP. Karena PHP adalah bahasa yang dynamic
+(server-side), dan XHP berada dibagian server, aplikasi yang dinamis membutuhkan banyak roundtrip
+ke server, dan XHP tidak menyelesaikan masalah tersebut.
+
+Lalu salah satu Facebook Engineers berniat untuk "membawa" XHP ke client-side, lalu terciptalah
+project React. Yang mana versi prototype nya bernama [FaxJs](https://github.com/jordwalke/FaxJs) yang
+dibuat selama 6 bulan yang implementasi pertamanya adalah terhadap Search element di Facebook.
+
+Facebook engineer tersebut bernama [Jordan Walke](https://twitter.com/jordwalke).
+
+Pada tahun 2012, Facebook Ads sulit untuk diatur, dan Facebook, membutuhkan solusi yang bagus untuk itu.
+Jordan Walke mulai mengerjakan React, dan barulah "React" benar-benar dibuat dari yang sebelumnya
+hanya project experiment bernama FaxJS.
+
+React menjadi project Open Source pasca akuisisi Instagram oleh Facebook, dan Instagram ingin
+mengadopsi teknologi baru yang dibuat oleh Facebook. Proses Facebook meng-open-source-kan React ini
+dilakukan oleh [Pete Hunt](https://twitter.com/floydophone), ex-engineer di Facebook & Instagram,
+sekaligus salah satu pembuat React.
+
+Pada 30 Mei 2013, Facebook meng-open-source-kan sumber kode React di
+[GitHub](https://github.com/facebook/react/commit/75897c2dcd1dd3a6ca46284dd37e13d22b4b16b4), dan
+pada 31 Mei memperkenalkan React ke publik via JSConf US 2013 yang dibawakan oleh Tom Occhino dan Jordan Walke
+dengan judul [JS Apps at Facebook](https://www.youtube.com/watch?v=GW0rj4sNH2w).
+
+#### Masalah yang dipecahkan
+
+- Membangun UI dengan pendekatan Component daripada Template, sehingga mudah diatur
+- Manipulasi terhadap DOM secara deklaratif daripada imperatif, untuk menyembunyikan hal-hal detail
+- Membuat proses rendering (dan rendering ulang) agar lebih efisien
+
+### Key Concepts
+
+- Host tree
+- Host Instance
+- Renderer
+- Reconciliation
+- Virtual DOM
+- Component
+- State
+- Lifecycle
+
+### Core Features
+
+- Fiber rendering
+- Code Splitting
+- Hooks
+- Context
+- Profiler & Devtools
+
+### Under The Hood (Key Concepts)
+
+#### Host Tree
+
+Setiap program memiliki Output, dan output dari React ini adalah sebuah "Tree". Tree ini bisa
+berbentuk DOM tree, View hierarchy (iOS), ataupun objek JSON.
+
+Disebut "Host" karena Tree tersebut diluar lingkungan React.
+
+#### Host Instance
+
+Host tree terdiri dari nodes, node-node tersebut disebut "Host Instance". Setiap node memiliki
+properties nya masing-masing (seperti `className` di DOM, atau `tintColor` di iOS). Dan juga
+memiliki API tersendiri seperti `appendChild`, `setAttribute` dll. Dengan menggunakan React, kita
+tidak perlu berurusan dengan imperatif API tersebut.
+
+Karena itu tugas React.
+
+#### Renderer
+
+Renderer berguna untuk memberitahu React untuk berinteraksi dengan lingkungan Host dan mengatur
+instance dari host nya. ReactDOM adalah renderer untuk host Browser dengan instance DOM, React
+Native adalah renderer untuk host Mobile dengan instance View hierarchy (iOS) dan Activity
+(Android) dsb.
+
+Detailnya, kita bahas dibawah.
+
+#### Host Tree + Host Instance + Renderer = UI
+
+Sekarang mari kita lihat hubungan antar ketiganya. Anggap host kita adalah Browser, setiap host
+memiliki nodes yang mana nodes di browser adalah DOM. Kita ingin membuat tombol,
+cara "native" nya adalah seperti ini di JavaScript:
+
+```js
+const Button = document.createElement('button')
+
+Button.textContent = 'Click me'
+Button.classList.add('c-button')
+
+console.log(Button) // <button class="c-button">Click me</button>
+```
+
+Browser mengerti nilai dari variable `Button` dan tau element apa yang dimaksud. Bandingkan dengan
+ketika kita membuat component `Button` di React:
+
+```js
+const Button = React.createElement('button', {
+  className: 'c-button'
+}, 'Click me')
+
+console.log(Button) // Object:
+
+{
+  "$$typeof": Symbol(react.element),
+  "_owner": null,
+  "key": null,
+  "props": {
+    "className": "c-button",
+    "children": "Click me"
+  },
+  "ref": null,
+  "type": "button"
+}
+```
+
+Host (browser) tidak mengerti maksud dari object diatas, alias hanya menganggap sebagai Object biasa.
+Maka kita memerlukan renderer untuk memberitahu React _klo element React ini tuh hasilnya adalah DOM
+tree_. Dan berdasarkan object tersebut (yang didapat dari `React`, `ReactDOM` mengerti element (DOM)
+apa yang dimaksud.
+
+```js
+const renderButton = ReactDOM.render(Button, document.body)
+
+console.log(renderButton) // <button class='c-button'>Click me</button>
+```
+
+Output tersebut (dari `render` di ReactDOM) adalah DOM tree, dan browser mengerti bagaimana mengatur DOM tree.
+
+Berkat menggunakan pendekatan ini (Host tree + Host instance + Renderer), kita bisa "me-render"
+component React dimanapun (Browser, Mobile, Terminal, dsb). Tinggal buat renderer sendiri.
+
+Jadi, React component diatas (yang `Button`), bisa dijadikan UI diberbagai platform. Mungkin ini
+output untuk platform iOS kurang lebih:
+
+```objectivec
+NSButton *Button = [[NSButton alloc] initWithFrame: CGRectMake(0, 0, 100, 100];
+[Button setTitle: @"Click me"];
+```
+
+Hal yang dilakukan oleh Renderer adalah hanya "me-render", karena React adalah library untuk membuat
+UI, kan? Dan UI tidak akan ada bentuknya bila tidak dirender.
+
+#### Reconciliation
+
+Reconciliation adalah algoritma "diffing" yang digunakan di React. Diffing singkatnya adalah proses
+"membedakan" dan dalam konteks disini yang dibedakan adalah nodes di Host Tree. React menjanjikan
+proses rendering lebih efisien salah satunya adalah karena menggunakan algoritma diffing ini.
+
+Anggap kita memiliki element Button yang memiliki `class` bernilai `c-button`. Element tersebut
+memiliki `class` tambahan bernilai `c-button--is-disabled` ketika tombol tersebut diklik. Maka React
+elementnya adalah seperti ini:
+
+```js
+const Button = React.createElement('button', {
+  className: `c-button ${state.isDisabled ? 'c-button--is-disabled' : ''}`,
+  onClick: function (e) {
+    state.isDisabled = true
+  }
+}, 'Click me')
+```
+
+"Under the hood" nya, yang dilakukan React adalah seperti ini:
+
+```js
+// ...
+
+if (state.isDisabled) {
+  element.classList.add('c-button--is-disabled')
+} else {
+  element.classList.remove('c-button--is-disabled')
+}
+
+// ...
+```
+
+Bagaimana React tau bahwa "yang harus diubah" hanyalah property dari `class`? Itu sudah tugas
+React, yang mana menggunakan algoritma reconciliation itu. Mari kita ke contoh yang lebih kompleks:
+
+```js
+const Button = React.createElement('button', {
+  className: `c-button ${state.isDisabled ? 'c-button--is-disabled' : ''}`,
+  style: {
+    color: '#eee'
+  },
+  onClick: function (e) {
+    state.isDisabled = true
+
+    setTimeout(function () {
+      state.isLoading = false
+    }, 3000)
+  }
+}, state.isLoading ? 'Loading...' : 'Click me')
+```
+
+Dari contoh diatas, React tau bahwa:
+
+1. Perubahan pertama adalah terhadap `className` dan `textContent`
+2. Setelah 3 detik, yang berubah hanyalah `textContent` sedangkan `className` tidak
+3. Tidak ada perubahan terhadap property `style`
+
+Representasi tree nya adalah seperti ini:
+
+```diff
+
+0] Initial state
+
+[Button]
+  | | |
+  | | +------- [style] - color: #333
+  | +--------- [textContent] - Click Me
+[className]
+  |
+  |
+  +-- c-button
+
+1] After click
+
+  [Button]
+    | | |
+    | | +------- [style] - color: #333
+-   | +--------- [textContent] - Click me
++   | +--------- [textContent] - Loading...
+  [className]
+    |
+    |
+    +-- c-button
++   +-- c-button--is-disabled
+
+2] After 3000ms
+
+  [Button]
+    | | |
+    | | +------- [style] - color: #333
+-   | +--------- [textContent] - Loading...
++   | +--------- [textContent] - Click me
+  [className]
+    |
+    |
+    +-- c-button
+    +-- c-button--is-disabled
+
+3] End result
+
+  [Button]
+    | | |
+    | | +------- [style] - color: #333
+    | +--------- [textContent] - Click me
+  [className]
+    |
+    |
+    +-- c-button
+    +-- c-button--is-disabled
+
+```
+
+Perubahan terhadap DOM tree tetap konsisten tanpa memengaruhi focus, selection, scroll state, dll
+yang mana setiap perubahan terjadi dengan membandingkan dengan tree sebelumnya.
+
+Untuk saat ini (React v16), engine yang digunakan oleh React untuk "reconciliation" memiliki
+codename [Fiber](https://github.com/acdlite/react-fiber-architecture).
+
+#### Virtual DOM
+
+Virtual DOM atau VDOM hanyalah sebuah "sebutan" untuk sesuatu yang merepresentasikan UI yang berada
+di _memory_. Host tree adalah VDOM. Setiap UI library yang menggunakan konsep Virtual DOM, berarti
+mereka memiliki object khusus yang merepresentasikan DOM/UI.
+
+Object ini:
+
+```js
+{
+  "$$typeof": Symbol(react.element),
+  "_owner": null,
+  "key": null,
+  "props": {
+    "className": "c-button",
+    "children": "Click me"
+  },
+  "ref": null,
+  "type": "button"
+}
+```
+
+Menurut React adalah sebuah DOM dengan element `button` yang memiliki property `class` bernilai
+"c-button" dan `textContent` dengan nilai "Click me". Yang bila dijadikan DOM "beneran" yang berada
+di browser (via `ReactDOM`), akan menjadi seperti ini:
+
+```js
+{
+  ...
+  accessKey: "",
+  accessKeyLabel: "",
+  assignedSlot: null,
+  attributes: NamedNodeMap [ class="c-button" ],
+  autofocus: false,
+  childElementCount: 0,
+  childNodes: NodeList [ #text ],
+  children: HTMLCollection { length: 0 },
+  classList: DOMTokenList [ "c-button" ],
+  className: "c-button",
+  tabIndex: 0,
+  tagName: "BUTTON",
+  textContent: "Click me",
+  title: "",
+  ...
+}
+```
+
+Yang mana VDOM (di memory) dan "DOM beneran" (di browser) tetap ter-singkron, dan singkronisasi
+tersebut disebut "Reconciliation".
+
+#### Component
+
+Pada dasarnya Component hanyalah sebuah `function` yang memiliki nilai keluaran "DOM". Contoh:
+
+```js
+const Button = React.createElement('button', {}, 'Click me')
+const Container = React.createElement('div', {
+  className: 'o-container'
+}, null)
+```
+
+`Button` dan `Container` adalah sebuah Component, disebut component adalah karena memiliki sifat
+"reusable", "composable", dan "ter-isolasi".
+
+- Reusable berarti component bisa digunakan dimana saja.
+- Composable berarti component bisa disandingkan dengan component lain
+- Ter-isolasi berarti perubahan yang terjadi terhadap component, maka hanya terjadi terhadap component
+itu saja. Meskipun terdapat 3 component yang sama.
+
+Di JavaScript, `function` adalah "first-class object" yang maksudnya object & function dianggap
+sebagai hal yang sama, yang berarti `function` adalah turunan dari `object`.
+
+```js
+Function instanceof Object // true
+```
+
+#### State
+
+State adalah "kondisi" atau "data", dari suatu UI. Jika kondisi sedang login, maka itulah state nya.
+Jika tombol di-disable, text input sedang di-input, maka itulah kondisinya.
+
+State berbentuk object, ini kira-kita state yang ada di halaman (UI) login minimal nya:
+
+- User input email
+- User input password
+- User klik tombol Login
+- Tombol di-disable ketika browser sedang request login
+
+Maka state nya adalah:
+
+```js
+state = {
+  userEmail: '',
+  userPassword: '',
+  isLoading: false
+}
+```
+
+Contohnya seperti ini:
+
+```jsx
+class Login extends React.Component {
+  state = {
+    userEmail: '',
+    userPassword: '',
+    isLoading: false
+  }
+
+  handleInput = (type, value) => {
+    this.setState({ [type]: value) })
+  }
+
+  handleLogin = e => {
+    this.setState({ isLoading: true })
+  }
+
+  render () {
+    const { userEmail, userPassword } = this.state
+
+    return (
+      <form>
+        <input
+          placeholder='email'
+          onChange={e => handleInput('userEmail', e.target.value)}
+          value={userEmail}
+        />
+        <input
+          placeholder='password'
+          onChange={e => handleInput('userPassword', e.target.value)}
+          value={userPassword}
+        />
+        <button
+          onClick={handleLogin}
+          disabled={this.state.isLoading}
+        >
+          {this.state.isLoading ? 'Loading...' : 'Login'}
+        </button>
+      </form>
+    )
+  }
+}
+```
+
+State berada di instance React component dan menjadi "source of truth" terhadap mengapa component
+harus di render ulang.
+
+#### Lifecycle
+
+React component memiliki 3 fase:
+
+- Mount
+- Update
+- Unmount
+
+Di Mount, hal yang dilakukan React adalah:
+
+1. Memanggil constructor
+2. Memanggil render
+3. Memanggil `componentDidMount`
+
+Di update, hal yang dilakukan React adalah:
+
+1. Memanggil render
+2. Memanggil `componentDidUpdate`
+
+Di Unmount, hal yang dilakukan React adalah:
+
+1. Memanggil `componentWillUnmount`
+
+Lifecycle diatas adalah yang umum digunakan. Hal-hal yang menyebabkan React melakukan "render ulang"
+(update) adalah:
+
+1. Bergantinya "props"
+2. Pemanggilan `setState` (merubah state yang ada)
+3. Pemanggilan `forceUpdate`
+
+Hal yang dilakukan ketika render adalah:
+
+- Update DOM
+- Update refs
+
+Berikut contohnya:
+
+```jsx
+class ReactComponent extends React.Component {
+  constructor () {
+    super()
+    this.state = {
+      someState: 'someValue'
+    }
+    console.log('1. Panggil constructor')
+  }
+
+  render () {
+    console.log('2. Panggil render')
+
+    setTimeout(() => {
+      console.log('4. Panggil componentDidUpdate setelah 5 detik')
+      this.setState({ someState: 'newValue' })
+    }, 5000)
+
+    return <p>{this.state.someState}</p>
+  }
+
+  componentDidMount () {
+    console.log('3. Panggil componentDidMount')
+  }
+
+  componentDidUpdate () {
+    console.log('5. Panggil componentDidUpdate')
+  }
+
+  componentWillUnmount () {
+    console.log('6. Panggil componentWillUnmount')
+  }
+}
+```
+
+Dan ini hasilnya (klik gambar untuk memperbesar)
+
+[![](/static/img/lifecycle.png)](/static/img/lifecycle.png)
+
+_componentWillUnmount diatas dipanggil "pertama" karena percobaan dilakukan menggunakan Hot Module Replacement,
+jadi ketika melakukan save, Webpack akan mengubah module yang berubah tanpa perlu melakukan refresh.
+Karena "pergantian module" itulah lifecycle componentWillUnmount terpanggil_
+
+Ada lifecycle lain seperti `getDerivedStateFromProps`, `shouldComponentUpdate`, dan
+`getSnapshotBeforeUpdate` namun 3 lifecycle tersebut sangat jarang digunakan dalam penggunaan umum selain
+untuk membuat UI yang sangat kompleks atau melakukan optimasi performa.
+
+### Core Features
+
+#### Fiber Rendering
+
+Sebelumnya, React menggunakan teknik "rekursif" untuk melakukan proses reconciliation yang memiliki
+codeame React Stack. Pada versi 16, untuk melakukan reconciliation React menggunakan "teknik" baru
+yang memiliki codename "Fiber" yang mana sangat bergantung dengan "prioritas" alias "scheduling".
+
+Fiber membuat proses rendering lebih _smooth_ karena Fiber membagi pekerjaan-pekerjaan menjadi
+chunks (bagian yang lebih kecil) yang memiliki kemampuan untuk mengatur "prioritas" untuk berbagai perubahan yang berbeda.
+Sederhananya, jika React sedang melakukan proses "diffing", sedangkan aplikasi membutuhkan update
+yang sifatnya "urgent", React bisa "mem-pause" proses diffing tersebut, lalu memproses update yang urgent tersebut, lalu bisa melanjutkan proses "diffing" kembali.
+
+Agar terasa _smooth_, Fiber benar-benar bermain di [frame
+rate](https://developer.mozilla.org/en-US/docs/Tools/Performance/Frame_rate) untuk menghindari
+"laggy" atau "glitch" khususnya terhadap interaksi yang dilakukan oleh user. Pada dasarnya, Fiber
+bergantung dengan
+[`requestIdleCallback`](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestIdleCallback)
+untuk melakukan proses scheduling tersebut. Jadi, React tau kapan browser memiliki "waktu luang" dan
+kapan browser "sedang sibuk".
+
+Kita tidak perlu pusing bagaimana Fiber bekerja (dan mengoptimalkan pengalaman pengguna), karena itu
+tugasnya React.
+
+#### Code Splitting
+
+Salah satu keuntungan menggunakan React (alias menggunakan pendekatan Component) adalah kode kita
+dianggap sebagai module. Keuntungannya adalah browser bisa meload component yang dibutuhkan saja
+sesuai permintaan.
+
+Misal ambil contoh tombol Login di Navbar. Ketika user klik tombol tersebut, user akan dihadapkan
+dengan "Modal" untuk login. Jika tidak menggunakan teknik Code Splitting, component Modal tersebut
+akan tetap termuat meskipun user **tidak pernah mengklik tombol Login**. Yang akibatnya:
+
+- User memuat script yang tidak digunakan (yang tidak dieksekusi)
+- Menambah ukuran file (bundle-size)
+
+Dengan code splitting, kita bisa memecahkan 2 masalah diatas berkat bantuan module bundler. Di
+React, kita bisa menggunakan methods `lazy`.
+
+```jsx
+// before
+import LoginModal from './components/shared/LoginModal'
+
+// after
+const LoginModal = React.lazy(() => import('./components/shared/LoginModal'))
+```
+
+Nilai keluaran dari `lazy` haruslah `Promise` yang me-`resolve` export "default" dari module yang mana itu adalah React component. Menggunakan cara diatas sangat efektif, namun kurang efisien. User akan melihat "glitch" ataupun "empty state" ketika browser & module bundler sedang memuat component yang dibutuhkan tersebut.
+
+Untuk mengakalinya, kita bisa menggunakan `Suspense` component dari React. Jadi, selagi browser
+memuat component yang dimaksud, user akan melihat component "alternatif" yang ringan sebagai
+"gantinya".
+
+```jsx
+<Suspense fallback={<p>Loading...</p>}>
+  <LoginModal />
+</Suspense>
+```
+
+Untuk menghindari penggunaan `Suspense` berkali-kali, bisa menggunakan pendekatan [Higher-order
+Component](https://reactjs.org/docs/higher-order-components.html).
+
+#### Hooks
+
+Hooks adalah API baru (v16.8) dari React yang relatif stabil untuk membuat component "stateful" dengan
+gaya _functional_. Jika sebelumnya untuk membuat component yang stateful (yang memiliki state) harus
+menggunakan `class` atau menggunakan pendekatan [Presentational & Container
+components](https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0), sekarang kita
+bisa membuatnya tanpa harus membuat `class`.
+
+Atau tanpa harus membuat component yang bergantung dengan props yang membuat sangat susah ter-prediksi.
+
+Hooks salah duanya ter-inspirasi dari Subscriptions nya `rx` dan Algebraic effects nya Multicore
+OCaml. Ada banyak alasan mengapa React menawarkan API hooks (dan ter-motivasi untuk membuat API ini) yang bisa dibaca [disini](https://reactjs.org/docs/hooks-intro.html#motivation).
+
+Singkatnya, Hooks membuat proses pembuatan & pemeliharan component yang kompleks, menjadi lebih
+sederhana dan tidak overhead.
+
+```jsx
+// before
+class LoginModal extends React.Component {
+  state = {
+    isModalOpen: false,
+    isLoading: false
+  }
+
+  handleLogin = e => {
+    ...
+    this.setState({ isLoading: true })
+  }
+
+  render () {
+    return (
+      <div className='c-login-modal'>
+        ...
+        <button
+          disabled={this.state.isLoading}
+          onClick={this.handleLogin}
+        >
+          Login
+        </button>
+      </div>
+    )
+  }
+}
+
+// after
+function LoginModal () {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+
+  handleLogin = e => {
+    ...
+    setIsLoading(true)
+  }
+
+  return (
+    <div className='c-login-modal'>
+      ...
+      <button
+        disabled={isLoading}
+        onClick={handleLogin}
+      >
+        Login
+      </button>
+    </div>
+  )
+}
+```
+
+[Hemat 4 baris!](https://www.mayerdan.com/ruby/2012/11/11/bugs-per-line-of-code-ratio). Tentu di
+aplikasi asli, kita bisa menghemat lebih banyak baris dan benar-benar menikmati keuntungan dari
+Hooks ini.
+
+#### Contexts
+
+Context berguna untuk membawa data di component tree tanpa harus membawanya ke props secara manual
+di setiap level. Anggap kita memiliki Navbar, yang menampilkan "Login" bila belum masuk dan
+"Username" bila sudah.
+
+Lalu user berada di halaman Login, ilustrasinya seperti ini:
+
+```jsx
+<Container isLoggedIn={this.state.isLoggedIn}>
+  <Navbar isLoggedIn={this.props.isLoggedIn}>
+    {this.props.isLoggedIn ? <MenuLoggedIn /> : <MenuNotLoggedIn />}
+  </Navbar>
+  <LoginPage isLoggedIn={this.props.isLoggedIn} />
+</Container>
+```
+
+Mengapa kita menggunakan cara diatas?
+
+1. Kita tidak menggunakan State managament
+2. Kita ingin component mengakses & memanipulasi state yang sama
+3. Component dibawahnya membutuhkan data tersebut & bisa memanipulasinya
+
+Untuk bisa mebaca "state" dari component diatasnya, kita "bawa" state tersebut via props. Kode
+diatas kita menggunakan "perspektif" di top-level component (`Container`), bagaimana bila
+menggunakan perspektif lain, misalnya di perspektif `LoginPage`?
+
+```jsx
+function LoginPage (props) {
+  ...
+  console.log(props) // isLoggedIn -> Container
+}
+  ```
+
+Component `LoginPage` pun tentunya tidak se-simple itu, tapi kita sederhanakan. Untuk memanipulasi
+`isLoggedIn`, biasanya yang dilakukan adalah seperti ini (misal):
+
+```jsx
+function LoginPage (props) {
+  ...
+  handleLogin = e => {
+    props.updateIsLoggedIn(true) -> Container
+  }
+}
+
+function Container (props) {
+  const handleUpdateLogin = state => {
+    setIsLoggedIn(state)
+  }
+
+  return (
+    <LoginPage
+      isLoggedIn={isLoggedIn}
+      updateIsLoggedIn={state => handleUpdateLogin(state)}
+    />
+  )
+}
+```
+
+Oke itu masih contoh simple, lihat contoh ini (klik gambar untuk memperbesar):
+
+[![](/static/img/context.png)](/static/img/context.png)
+
+Bayangkan bagaimana component `<Header>` mengambil data dari `<Context.Provider>` yang di highlight
+tersebut?
+
+```jsx
+<AppContainer>
+  <Container>
+    <Suspense>
+      <Context.Provider> {/* <- ambil data ini */}
+        <Context.Provider>
+          <MyApp>
+            <Layout>
+              <Header> {/* <- disini *}
+```
+
+Dengan Context, kita bisa melakukannya menggunakan
+[`Provider`](https://reactjs.org/docs/context.html#contextprovider) dan [`Consumer`](https://reactjs.org/docs/context.html#contextconsumer). Atau bisa menggunakan State Management untuk solusi yang lebih elegan, dengan catatan state disimpan secara "ter-sentralisasi" agar mudah ter-prediksi.
+
+#### Profiler & Devtools
+
+React menawarkan "cara elegan" untuk melakukan
+[profiling](https://en.wikipedia.org/wiki/Profiling_(computer_programming)) terhadap component kita.
+Informasi-informasi seputar:
+
+- Seberapa penting "prioritas" nya untuk merender component tersebut?
+- Pada detik keberapa component tersebut di render?
+- Berapa lama Component X di render?
+- Apa yang menyebabkan component tersebut di render (ataupun dirender ulang?)
+- Dan lain-lain
+
+Yang mana membuat proses optimasi performa menjadi lebih mudah. React menyediakan "lower-level" API
+untuk melakukan profiling ini via [Profiler component](https://reactjs.org/docs/profiler.html) namun
+menggunakan [Devtools](https://addons.mozilla.org/en-US/firefox/addon/react-devtools/) yang
+ditawarkan oleh React sejauh ini sudah sangat efektif.
+
+[![](/static/img/profiler.png)](/static/img/profiler.png)
+
+### Ekosistem
+
+React memiliki ekosistem yang kaya. React bisa digunakan di Browser, Mobile, PDF, Terminal karena
+komunitas. Salah satu faktornya adalah karena kita bisa membuat "Renderer" sendiri sehingga kita
+bisa menggunakan sesuai kebutuhan kita (bukan hanya karena sesuai kebutuhan pemeliharanya, Facebook)
+ke berbagai platform.
+
+Sejauh ini, React berperan di platform:
+
+- Web via [ReactDOM](https://reactjs.org)
+- Isomorphic App (Client & Server) via [Next.js](https://nextjs.org)
+- Mobile via [React Native](https://facebook.github.io/react-native)
+- Terminal via [ink](https://github.com/vadimdemedes/ink)
+- Desktop via [RN + Qt](https://github.com/status-im/react-native-desktop)
+- Windows via [RN + UWP + WPF](https://github.com/Microsoft/react-native-windows)
+
+Juga ada beberapa library yang mendukung dalam pembangunan aplikasi menggunakan React, seperti:
+
+- State management (Redux, MobX, dsb)
+- CSS in JS (Styled Components, Emotion)
+
+Dan terdapat banyak komunitas seputar React seperti di dev.to, hashnode, reactiflux (discord
+server), reddit, dan spectrum. Di Indonesia sendiri ada [React ID](https://reactjs.id).
+
+### Stats
+
+#### Kompleksitas
+
+Kode React biasanya menggunakan "syntax sugar" bernama JSX agar pembuatan Component lebih
+declarative. Daripada harus menulis seperti ini:
+
+```js
+const Button = React.createElement('button', {
+  className: `c-button ${state.isDisabled ? 'c-button--is-disabled' : ''}`,
+  onClick: function (e) {
+    state.isDisabled = true
+  }
+}, 'Click me')
+```
+
+Dengan JSX kita bisa menulisnya seperti ini:
+
+```jsx
+<Button
+  className={`c-button ${state.isDisabled ? 'c-button--is-disabled' : ''}`}
+  onClick={e => { state.isDisabled = true }}
+>
+  Click me
+</Button>
+```
+
+Yang artinya, kita perlu "sesuatu" untuk mengubah syntax tersebut, karena browser tidak mengerti
+dengan syntax tersebut. "Sesuatu" tersebut salah satunya adalah [Babel](https://babeljs.io), sebuah JavaScript compiler. Pada dasarnya
+Babel biasa disebut "JavaScript Transpiler" karena prosesnya adalah mengubah kode "JavaScript" (high-level language)
+ke JavaScript juga (high-level language).
+
+Juga, karena tujuan React adalah agar membuat UI menggunakan pendekatan Component, kita perlu
+menggunakan "Module bundler" karena component-component tersebut akan dianggap sebagai Module. Dan
+biasanya module bundler tersebut adalah [Webpack](https://webpack.js.org).
+
+Dan juga, rata-rata kode yang ditulis di aplikasi yang menggunakan React menggunakan syntax "modern JavaScript"—seperti
+menggunakan `class`, `static property`, dll—yang berarti kita perlu menggunakan "sesuatu" untuk meng-handle itu.
+
+Dan sesuatu tersebut adalah "plugin" dari Babel untuk mengubah syntax-syntax modern tersebut ke versi yang bisa
+dimengerti oleh browser.
+
+Rekapitulasinya, untuk bisa mulai menggunakan React, kita membutuhkan:
+
+- JavaScript Transpiler (Babel)
+- Babel plugin (presets)
+- Module Bundler (Webpack)
+
+Yang berarti menambah "learning curve" lagi.
+
+Beruntungnya, untuk bisa mulai menggunakan React tanpa
+ingin berurusan dengan 3 "tools" diatas, Facebook & komunitas memberikan jalan pintas via [Create
+React App](https://create-react-app.dev). Agar yang perlu kamu lakukan untuk bisa memulai membuat
+aplikasi web menggunakan React adalah:
+
+```bash
+create-react-app <nama_project>
+```
+
+Maka CRA akan meng-handle 3 hal diatas via `react-scripts`. Tetap, pengetahuan fundamental terhadap
+JavaScript, tooling menggunakan JavaScript, dan penggunaan dasar terminal dibutuhkan disini.
+
+#### Adopsi
+
+React sendiri di _dogfooding_ oleh Facebook, yang artinya Facebook selain sebagai sang pembuat & pemelihara
+juga sebagai pengguna. Selain Facebook, brand-brand besar yang menggunakan React juga antara lain:
+
+- Twitter
+- Airbnb
+- Instagram
+- Netflix
+- Dropbox
+
+Dan masih banyak lagi. Di Indonesia sendiri antara lain:
+
+- Tokopedia
+- Traveloka
+- Sorabel
+- Kata.ai
+- Qlue
+
+Dan masih banyak lagi pastinya.
+
+#### Alternatif
+
+Ada beberapa alternatif yang sama-sama memberikan solusi seperti React, antara lain:
+
+- Preact
+- Inferno
+- Vue.js
+- Svelte
+- Ember
+
+Yang sama-sama menggunakan konsep Component-based, declarative rendering, dan Virtual DOM.
+
+### Kesimpulan
+
+React benar-benar mengubah cara pandang kita dalam membuat User Interface. React menjadi standar
+industri dalam membangun User Interface karena hampir disetiap job vacancy untuk posisi Frontend
+Engineers atau UI Engineers membutuhkan pengetahuan terhadap React.
+
+React cukup stabil, perubahan versi major pun baru terjadi sekali (dari v15 ke v16) pada September 2017
+kemarin yang salah satunya adalah mengubah reconciliation engine (internal) menggunakan Fiber.
+
+React cocok untuk membuat aplikasi yang memiliki banyak interaksi, yang memanipulasi DOM secara
+berkala, sampai ke aplikasi yang memiliki banyak DOM. Penggunaan React untuk sekarang bukan hanya
+sekedar untuk membuat UI, melainkan sampai ke pembuatan seluruh aplikasi.
+
+Bukankah aplikasi adalah kumpulan UI yang menerima & memproses interaksi?
+
+### Referensi
+
+- React Source Code. https://github.com/facebook/react
+- React Documentation. https://reactjs.org/docs
+- React as a UI Runtime. https://overreacted.io/react-as-a-ui-runtime
+- React Fiber Architecture. https://github.com/acdlite/react-fiber-architecture
+- JavaScript’s History and How it Led To ReactJS. https://thenewstack.io/javascripts-history-and-how-it-led-to-reactjs
+- The History of React.js on a Timeline. https://blog.risingstack.com/the-history-of-react-js-on-a-timeline
+- The React Story: How Facebook's Instagram Acquisition Led To The Open Sourcing of React.js. https://stackshare.io/posts/the-react-story#the-one-man-facebook-video-team
+- How Virtual-DOM and diffing works in React. https://medium.com/@gethylgeorge/how-virtual-dom-and-diffing-works-in-react-6fc805f9f84e
+- Inside Fiber: an in-depth overview of the new reconciliation algorithm in React. https://blog.ag-grid.com/inside-fiber-an-in-depth-overview-of-the-new-reconciliation-algorithm-in-react
+
+---
+
+Revisi: `null`. Diterbitkan pada 27 September 2019.
+
