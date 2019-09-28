@@ -30,29 +30,32 @@ export default withRouter(props => {
         </div>
       )}
       {children}
-      <p>
-        <a
-          title='Edit this report'
-          href={`https://github.com/evilfactorylabs/rndc/edit/master/pages${router.pathname}.mdx`}
-        >
-          Edit this report
-        </a>
-        <span>|</span>
-        <a
-          rel='noopener noreferer'
-          target='_blank'
-          title='Share to Twitter'
-          href={`https://twitter.com/intent/tweet/?text=https://rndc.evilfactorylabs.id${router.pathname}`}
-        >
-          Share to twitter
-        </a>
-        <style jsx>{`
-          span {
-            padding-left: 5px;
-            padding-right: 5px;
-          }
-        `}</style>
-      </p>
+      {meta.isPublished !== true ||
+        (router.pathname !== '/' && (
+          <p>
+            <a
+              title='Edit this report'
+              href={`https://github.com/evilfactorylabs/rndc/edit/master/pages${router.pathname}.mdx`}
+            >
+              Edit this report
+            </a>
+            <span>|</span>
+            <a
+              rel='noopener noreferer'
+              target='_blank'
+              title='Share to Twitter'
+              href={`https://twitter.com/intent/tweet/?text=https://rndc.evilfactorylabs.id${router.pathname}`}
+            >
+              Share to twitter
+            </a>
+            <style jsx>{`
+              span {
+                padding-left: 5px;
+                padding-right: 5px;
+              }
+            `}</style>
+          </p>
+        ))}
     </>
   )
 })
