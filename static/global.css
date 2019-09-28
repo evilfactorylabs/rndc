@@ -1,0 +1,72 @@
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  color: #333;
+  background-color: #efdc05;
+}
+
+body {
+  background-color: #161616;
+  color: #fff;
+  padding: 0;
+  margin: 0;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Roboto',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+hr {
+  border: none;
+  border-top: 1px dashed #ccc;
+}
+
+p {
+  line-height: 1.6rem;
+}
+
+p code,
+li code {
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 3px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+h3 {
+  font-size: 28px;
+  margin-bottom: 0;
+}
+
+img {
+  width: 100%;
+}
+
+li {
+  margin-bottom: 1rem;
+}
+
+h4 {
+  font-size: 20px;
+}
+
+pre code {
+  font-size: 14px !important;
+}
+
+a {
+  color: inherit;
+}
+
+a:hover,
+a:focus {
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+a.footnote-backref {
+  padding-left: 5px;
+  font-size: 12px;
+}
