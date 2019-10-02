@@ -154,4 +154,5 @@ contents to public in [free culture](https://creativecommons.org/licenses/by/4.0
 - Template, https://github.com/evilfactorylabs/rndc/blob/master/template.md
 
 ### License
-MIT © [evilfactorylabs](https://github.com/evilfactorylabs)
+Code under MIT © [evilfactorylabs](https://github.com/evilfactorylabs)
+Content under Creative Commons Attribution 4.0 International License © [evilfactorylabs](https://github.com/evilfactorylabs)
