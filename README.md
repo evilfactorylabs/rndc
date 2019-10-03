@@ -152,3 +152,7 @@ contents to public in [free culture](https://creativecommons.org/licenses/by/4.0
 - Web Fundamentals, https://developers.google.com/web/fundamentals
 - MDN, https://developer.mozilla.org/en-US
 - Template, https://github.com/evilfactorylabs/rndc/blob/master/template.md
+
+### License
+Code under MIT © [evilfactorylabs](https://github.com/evilfactorylabs)
+Content under Creative Commons Attribution 4.0 International License © [evilfactorylabs](https://github.com/evilfactorylabs)
