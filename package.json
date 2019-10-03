@@ -5,7 +5,8 @@
   "scripts": {
     "start": "next start",
     "dev": "next dev",
-    "generate": "next build && next export"
+    "generate": "next build && next export",
+    "new": "node scripts/new.js"
   },
   "dependencies": {
     "@mapbox/rehype-prism": "^0.3.1",
