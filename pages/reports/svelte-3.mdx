@@ -1,0 +1,656 @@
+import Meta from '../../components/Meta'
+
+export const meta = {
+  title: 'Svelte v3 report by evilfactorylabs RNDC',
+  isPublished: false,
+  published: 'Oct 03, 2019',
+  description: 'Cybernetically enhanced web apps'
+}
+
+export default ({ children }) => <Meta meta={meta}>{children}</Meta>
+
+# Svelte
+
+Cybernetically enhanced web apps
+
+### Latar Belakang
+
+#### Sejarah Singkat
+
+Tujuan Svelte adalah untuk membuat aplikasi web yang "serius" namun tetap membuat aplikasi tersebut
+memiliki ukuran yang kecil, dan cepat.
+
+Membuat aplikasi yang "serius" menggunakan JavaScript tanpa harus berurusan dengan hal-hal yang
+kompleks adalah hal yang sangat sulit, namun ada sesuatu yang bisa mencapai itu, yaitu compiler.
+
+Lihat, berapa besar ukuran aplikasi yang menggunakan compiler dengan yang tidak? Saya membuat
+aplikasi [Wardex](https://wardex.faultable.dev), sebuah Pokemon explorer. Total file JavaScript yang
+digunakan di runtime adalah ~108.85kb dengan catatan sudah di compress & minify.
+
+Jika belum, sekitar 350.99kB. Dan ya, sudah di optimasi se-strict mungkin (salah satunya via code
+splitting). Mengapa bisa mencapai sampai ukuran segitu? Sederhana, dependency. Saya menggunakan
+React yang berukuran 2.6KB dan ReactDOM yang berukuran 36.4KB dengan catatan ukuran kedua file
+tersebut sudah di minify & gzip.
+
+Belum ditambah dependensi lain, plus kode untuk aplikasi kita.
+
+Sedangkan, alasan kita untuk menggunakan framework adalah agar pekerjaan kita menjadi lebih cepat,
+efektif, dan efisien.
+
+Component-based salah satunya agar membuat proses development UI lebih efektif dengan memecah beberapa UI
+menjadi komponen, alias bagian yang lebih kecil dan ter-isolasi. Pengguna tidak peduli entah kita
+menggunakan pendekatan component, atau menggunakan React ataupun Web Components. Yang mereka peduli
+adalah aplikasi yang cepat, dapat diandalkan, dan stabil.
+
+Kembali ke topik, Svelte adalah sebuah "compiler", meskipun tidak sepenuhnya sebuah compiler. Svelte
+sama-sama memiliki runtime, Sama seperti [Clang](https://clang.llvm.org/) yang mana sebuah compiler
+dan memiliki runtime nya "sendiri", `compiler-rt` dari llvm contohnya.
+
+Begitupula dengan Svelte. Svelte memiliki "runtime" nya sendiri untuk menjalankan kode-kode yang
+dicompile oleh Svelte di module
+[`svelte/internal`](https://github.com/sveltejs/svelte/tree/master/src/runtime/internal). Dan
+seperti yang sudah kita ketahui, setiap "compiler runtime" pasti memiliki ukuran yang kecil.
+
+Dan yang perlu ketahui juga, setiap compiler memiliki "level optimasi" tersendiri, yang artinya,
+bahkan kita bisa mengandalkan compiler untuk proses optimasi.
+
+Pembuat Svelte adalah [Rich Harris](https://twitter.com/rich_harris), seorang Graphics Editor di
+[NYTimes](https://www.nytimes.com/).
+
+#### Masalah yang dipecahkan
+
+- Membuat aplikasi yang memiliki ukuran relatif kecil
+- Menjadi framework "tanpa" framework
+- Menghilangkan _abstraction layer_ antara aplikasi dan runtime (browser)
+
+### Key Concepts
+
+- Compiler
+- Svelte Script
+- Svelte Internal (runtime)
+- Reactivity
+- Purely Native
+- Lifecycle
+
+### Core Features
+
+- Write less code
+- Native reactivity
+- No Virtual DOM overhead
+- Focus on web development
+- Built-in animation & transition
+- Built-in store management
+- Low-effort debugging
+
+### Under The Hood (Key Concepts)
+
+#### Compiler
+
+Svelte adalah sebuah compiler, sama seperti [Babel](https://babeljs.io) yang mengubah kode
+ES-something mu ke kode JavaScript yang bisa dimengerti oleh browser.
+
+Svelte menjadi compiler hanya ketika di compile time, di build time, Svelte adalah sebuah framework.
+Itulah mengapa framework menjadikan "Frameworks without framework" sebagai bahan marketingnya,
+karena memang begitulah adanya.
+
+Kita bahas sekilas tentang compiler, misal Babel. Babel adalah sebuah JavaScript compiler yang
+kegunaannya sudah kita bahas diatas, Babel mengubah kode ini:
+
+```js
+async function helloWorld () {
+  console.log('hello world')
+}
+```
+
+Menjadi seperti ini:
+
+```js
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
+  try {
+    var info = gen[key](arg)
+    var value = info.value
+  } catch (error) {
+    reject(error)
+    return
+  }
+  if (info.done) {
+    resolve(value)
+  } else {
+    Promise.resolve(value).then(_next, _throw)
+  }
+}
+
+function _asyncToGenerator(fn) {
+  return function() {
+    var self = this,
+      args = arguments;
+    return new Promise(function(resolve, reject) {
+      var gen = fn.apply(self, args)
+      function _next(value) {
+        asyncGeneratorStep(gen, resolve, reject, _next, _throw, 'next', value)
+      }
+      function _throw(err) {
+        asyncGeneratorStep(gen, resolve, reject, _next, _throw, 'throw', err)
+      }
+      _next(undefined)
+    })
+  }
+}
+
+function helloWorld() {
+  return _helloWorld.apply(this, arguments)
+}
+
+function _helloWorld() {
+  _helloWorld = _asyncToGenerator(
+    regeneratorRuntime.mark(function _callee() {
+      return regeneratorRuntime.wrap(function _callee$(_context) {
+        while (1) {
+          switch ((_context.prev = _context.next)) {
+            case 0:
+              console.log('hello world')
+
+            case 1:
+            case 'end':
+              return _context.stop()
+          }
+        }
+      }, _callee)
+    })
+  )
+  return _helloWorld.apply(this, arguments)
+}
+
+```
+
+Dengan catatan untuk tetap mendukung browser yang belum mendukung `async/await` secara "native"
+sehingga kode diatas bisa dijalankan. Dengan compiler (ataupun framework), kita bisa menulis kode "yang
+lebih sedikit".
+
+Bedanya, framework melakukan "abstraksi" sedangkan compiler melakukan "kompilasi" atau "transpalasi".
+Dalam konteks Svelte, compiler mengubah "komponen" Svelte berikut dari:
+
+```html
+<h1>Hello world</h1>
+```
+
+Menjadi:
+
+```js
+import {
+	SvelteComponent,
+	detach,
+	element,
+	init,
+	insert,
+	noop,
+	safe_not_equal
+} from 'svelte/internal'
+
+function create_fragment(ctx) {
+  var h1
+
+  return {
+    c() {
+      h1 = element('h1')
+      h1.textContent = 'Hello world'
+    },
+
+    m(target, anchor) {
+      insert(target, h1, anchor)
+    },
+
+    p: noop,
+    i: noop,
+    o: noop,
+
+    d(detaching) {
+      if (detaching) {
+        detach(h1)
+      }
+    }
+  }
+}
+
+class App extends SvelteComponent {
+  constructor(options) {
+    super()
+    init(this, options, null, create_fragment, safe_not_equal, [])
+  }
+}
+
+export default App
+```
+
+Yang mana `element` yang diambil dari `svelte/internal` hanyalah sebuah "shortcut" dari
+`document.createElement`, alias, sama seperti kita membuat kode seperti ini:
+
+```js
+const element = name => document.createElement(name)
+```
+
+Namun kita tidak perlu menulisnya, itu tugas Svelte. Begitupula dengan `detach` dan `insert` yang
+mana sebenarnya adalah kode seperti ini:
+
+```js
+const detach = node => node.parentNode.removeChild(node)
+const insert = (target, node, anchor) => target.insertBefore(node, anchor || null)
+```
+
+VanillaJS tanpa harus menulis kode dengan rasa vanilla dengan pendekatan komponen!
+
+Dan `SvelteComponent` adalah class yang mengatur "lifecycle" terkait komponen yang dibuat.
+
+Untuk tugas compiler di Svelte, hampir sama dengan tugas compiler pada umumnya di frontend.
+Melakukan hal-hal terkait parsing dan lexing. Intinya, compiler lah mengapa kamu bisa menulis kode
+"lebih sedikit" sehingga bisa mengurangi [kemungkinan terlahirnya
+bug](https://www.mayerdan.com/ruby/2012/11/11/bugs-per-line-of-code-ratio), melakukan hal-hal yang
+sifatnya optimasi, dan membuat kode "Svelte script" yang kamu tulis bisa dimengerti oleh browser.
+
+#### Svelte Script
+
+Sudah disinggung sebelumnya seputar Svelte Script, namun apa maksudnya? Gini, mari kita bandingkan
+dengan bagaimana kita membuat "functional" component di React.
+
+```js
+import React from 'react'
+
+const NavbarComponent = () => <div>Navbar</div>
+
+export default NavbarComponent
+```
+
+Kode diatas adalah "murni" javascript, meskipun terdapat kode JSX disitu yang akan diubah menjadi
+kode JavaScript biasa oleh Babel. Dan ya, esktensinya pun `.js`, ada beberapa yang menggunakan
+`.jsx` untuk memberitau developers secara eksplisit bahwa itu kode JSX.
+
+Di Svelte, kita menggunakan yang namanya "Svelte Script". Kamu membuat komponent dengan cara membuat
+file yang memiliki ekstensi `.svelte`. Sama seperti membuat komponent di Vue yang menggunakan
+ekstensi `.vue`. 
+
+Di Svelte script, sebenarnya sama seperti kita membuat file html "biasa". Bedanya, terdapat beberapa
+syntax yang memang bukan HTML ataupun JavaScript. Misal, seperti ini:
+
+```jsx
+{#if user.loggedIn}
+  <button>
+    Logout
+  </button>
+{/if}
+```
+
+Kode diatas bila di JavaScript sama seperti ini kurang lebih:
+
+```js
+{user.loggedIn && <button>Logout</button}
+```
+
+Tentu, syntax `<button>` bukanlah JavaScript, melainkan HTML. Di React, kita menyebutnya JSX. Di
+Svelte, ya Svelte Script. Hal yang paling disukai dari Svelte Script adalah syntax nya intuitif
+secara struktural. Kode berikut:
+
+```html
+<style>
+  h2 {
+    background: red;
+  }
+</style>
+
+<h2>Hello World</h2>
+```
+
+Pada dasarnya kode diatas adalah kode yang valid untuk di HTML & Svelte.
+
+Bedanya, di Svelte, element `h2` tersebut sudah termasuk menjadi komponent, sehingga "styling"
+diatas hanya berlaku terhadap element `h2` yang berada di komponen tersebut. Begitupula dengan kode
+seperti ini:
+
+```html
+<style>
+  h2 {
+    background: red;
+  }
+</style>
+
+<h2>Hello World</h2>
+
+<script>
+  window.alert(1)
+</script>
+```
+
+Adalah kode yang valid baik di Svelte dan di HTML.
+
+#### Svelte internal
+
+Sudah disinggung juga sedikit diatas, Svelte internal adalah tentang "shortcut", tentang lifecycle, dan
+tentang apapun yang terkait dengan component. Tanpa abstraksi antar aplikasi dan runtime (browser).
+
+Sebagai contoh agar lebih mudah dipahami, mari kita bandingkan dengan React.
+
+Untuk melakukan `render` component, React melakukan proses Reconciliation terhadap Host tree,
+melakukan proses cek apakah browser sedang sibuk atau tidak, baru melakukan render.
+
+Yang mana, terdapat "abstraksi" untuk melakukan render, yang sebenarnya hanyalah proses
+`appendChild` ataupun `insertBefore` yang pastinya
+[tidak](https://github.com/facebook/react/blob/0a527707cd8befd21a741ca9646a8551842190b0/packages/react-dom/src/client/ReactDOMHostConfig.js#L86)
+[sesimple](https://github.com/facebook/react/blob/0a527707cd8befd21a741ca9646a8551842190b0/packages/react-dom/src/client/ReactDOMHostConfig.js#L393) [yang](https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOM.js#L414) [di](https://github.com/facebook/react/blob/0a527707cd8befd21a741ca9646a8551842190b0/packages/react-dom/src/client/ReactDOMHostConfig.js#L426) [bahas](https://github.com/facebook/react/blob/master/packages/react-dom/src/client/ReactDOM.js#L224).
+
+Di Svelte, untuk melakukan "render", Svelte internal akan memanggil `init` di `constructor`, melakukan beberapa
+"ceremony" terkait "component", lalu memanggil methods `m` yang mana di methods `m` tersebut
+memanggil methods `insert` dan method `insert` ini adalah memanggil methods `insertBefore`.
+
+Yang mana `insertBefore` ini adalah [API
+"native"](https://developer.mozilla.org/en-US/docs/Web/API/Node/insertBefore) dari browser untuk
+menambahkan Node ke suatu Node sebelum Node tertentu yang sudah ada. Singkatnya, semua proses
+rendering terhadap DOM dikembalikan lagi ke browser, namun dengan "cara" yang sudah dirancang oleh
+Svelte agar proses rendering terhadap component tersebut lebih efektif.
+
+Svelte yakin dengan "proses" rendering yang dilakukan oleh browser, bukan membuat cara baru untuk
+melakukan "proses" rendering.
+
+Dan karena kita membuat komponen, setiap komponen pasti memiliki lifecycle sendiri yang terpisah
+dengan lifecycle yang dimiliki oleh browser. Dan untuk mengatur lifecycle inilah, kerjaannya Svelte Internal.
+
+Kita tidak perlu berurusan dengan Svelte internal, karena sesuai namanya, **internal**.
+
+#### Reactivity
+
+Setiap framework yang menawarkan "declarative" sebagai bahan marketingnya, pasti menjadikan
+"reactivity" sebagai first-class. Beberapa framework yang terkenal sudah memberikan cara untuk
+membuat data tersebut reactive. Seperti React dengan `setState` dan `useState` nya, atau Vue dengan
+`data` dan `computed` nya, dsb.
+
+Apa maksud dari Reactivity disini?
+
+Bayangkan kita memiliki kode seperti ini.
+
+```js
+let firstName = 'Fariz'
+let lastName = 'Rizaldy'
+
+let fullName = `${firstName} ${lastName}`
+
+const createHeading = content => {
+  const heading = document.createElement('h1')
+  heading.textContent = content
+
+  return heading
+}
+
+let heading = createHeading(fullName)
+
+document.body.appendChild(heading) // <h1>Fariz Rizaldy</h1>
+```
+
+Maksud kode diatas adalah kita membuat variable `firstName` dengan nilai `Fariz`, variable `lastName`
+dengan nilai `Rizaldy`, dan membuat variable `fullName` dengan nilai yang diambil dari variable
+`firstName` dan `lastName` lalu membuat element `h1` dan isi nilainya dengan nilai dari `fullName`.
+
+Pada dasarnya, berdasarkan asumsi kita, ketika kita mengubah nilai variable `lastName` misal menjadi
+`Riz`, yang kita harapkan, nilai dari `fullName` menjadi `Fariz Riz`.
+
+```js
+// ...
+let heading = createHeading(fullName)
+
+setTimeout(() => {
+  lastName = 'Riz'
+  heading.textContent = fullName // <h1>Fariz Rizaldy</h1>
+}, 3000)
+```
+
+Wut?
+
+Ya, itu tidak salah. Karena pada dasarnya `firstName` dan `lastName` yang dimaksud di variable
+`fullName` tersebut mengarah ke "nilainya", bukan "referensinya". Di JavaScript, kita tidak bisa
+mengarah ke referensi. Jadi, variable `lastName` di `fullName` itu maksudnya adalah mengambil nilai
+nya (Rizaldy), bukan referensinya (pointer?).
+
+Maka dari itu ketika kita mengubah nilai dari variable `lastName`, tidak berpengaruh ke variable
+`fullName`. Kecuali, kita melakukan "assign" juga.
+
+```js
+//...
+
+setTimeout(() => {
+  lastName = 'Riz'
+
+  fullName = `${firstName} ${lastName}`
+
+  heading.textContent = fullName // <h1>Fariz Riz</h1> lol finally
+}, 3000)
+```
+
+Yang pastinya tidak mungkin kita lakukan.
+
+Sengaja kita pakai `setTimeout` untuk mensimulasikan "lifecycle" di kode kita.
+
+Sekarang, mari kita coba di Svelte dengan kode yang sama.
+
+```html
+<script>
+  let firstName = 'Fariz'
+  let lastName = 'Rizaldy'
+
+  let fullName = `${firstName} ${lastName}`
+
+  setTimeout(() => {
+    lastName = 'Riz'
+  }, 3000)
+</script>
+
+<h1>{fullName}</h1> // <h1>Fariz Rizaldy</h1>. After 3s: Same.
+```
+
+Gak ada bedanya dengan di JavaScript! Tunggu dulu, pattern diatas (`fullName`) dengan sebutan
+"computed value", singkatnya, nilai diambil berdasarkan nilai lain. Kita harus memberitau Svelte
+jika nilai dari `fullName` tersebut sifatnya dinamis (computed value), bukan statis (from value).
+
+Untuk memberitaunya, kita bisa menggunakan kata kunci `$:`, daripada menggunakan kata kunci `let`.
+
+```html
+<script>
+  let firstName = 'Fariz'
+  let lastName = 'Rizaldy'
+
+  $:fullName = `${firstName} ${lastName}`
+
+  setTimeout(() => {
+    lastName = 'Riz'
+  }, 3000)
+</script>
+
+<h1>{fullName}</h1> // <h1>Fariz Rizaldy</h1>. After 3s: Fariz Riz
+```
+
+Work as expected! Mari kita telusuri apa yang terjadi? Kuncinya ada di `$$invalidate`.
+
+Svelte akan membuat function `instance` bila di kode kita memiliki "computed value" ataupun memiliki
+function lain. Kira-kira beginilah kodenya:
+
+```js
+function instance($$self, $$props, $$invalidate) {
+	
+  let lastName = 'Rizaldy'
+  let fullName = firstName + lastName
+
+  setTimeout(() => {
+    $$invalidate('lastName', lastName = 'Riz')
+  }, 3000)
+
+  $$self.$$.update = ($$dirty = { firstName: 1, lastName: 1 }) => {
+    if ($$dirty.firstName || $$dirty.lastName) {
+      $$invalidate('fullName', fullName = `${firstName} ${lastName}`)
+    }
+  }
+
+  return { fullName }
+}
+```
+
+Function `instance` tersebut digunakan ketika Svelte component memanggil `init` di `constructor`:
+
+```js
+// ...
+  constructor(options) {
+    super()
+    init(this, options, instance, create_fragment, safe_not_equal, [])
+  }
+// ...
+```
+
+Yang mana, jika `instance` tersebut tidak `undefined`, maka Svelte akan melakukan "checking" alias
+"diffing":
+
+```js
+  let ready = false
+
+  $$.ctx = instance
+    ? instance(component, props, (key, ret, value = ret) => {
+      if ($$.ctx && not_equal($$.ctx[key], $$.ctx[key] = value)) {
+        if ($$.bound[key]) $$.bound[key](value)
+        if (ready) make_dirty(component, key)
+      }
+      return ret
+    })
+    : props
+```
+
+Dan jika terus kita telusuri, `make_dirty` adalah tentang membuat component tersebut `dirty`. Yang
+berarti terdapat "perubahan" terhadap "Component" namun "belum dirender" ke browser. Dalam konteks disini,
+perubahan tersebut adalah "data" atau "state".
+
+Prosesnya sebenarnya simple, hanya looping. Kita ambil contoh dari perubahan yang terjadi di
+`setTimeout` kita:
+
+```js
+setTimeout(() => {
+  $$invalidate('lastName', lastName = 'Riz')
+}, 3000)
+```
+
+Mari kita fokus ke `$$invalidate` nya, ini yang dilakukan oleh `$$invalidate`:
+
+```js
+const $$invalidate = (key, ret, value = ret) => {
+  if ($$.ctx && not_equal($$.ctx[key], $$.ctx[key] = value)) {
+    if ($$.bound[key]) $$.bound[key](value)
+    if (ready) make_dirty(component, key)
+  }
+  return ret
+}
+```
+
+Dan ini yang dilakukan oleh `make_dirty`:
+
+```js
+function make_dirty(component, key) {
+  if (!component.$$.dirty) {
+    dirty_components.push(component)
+    schedule_update()
+    component.$$.dirty = blank_object()
+  }
+  component.$$.dirty[key] = true
+}
+```
+
+Dan ini yang dilakukan oleh `schedule_update`:
+
+```js
+function schedule_update() {
+  if (!update_scheduled) {
+    update_scheduled = true
+    resolved_promise.then(flush)
+  }
+}
+```
+
+Terakhir, ini yang dilakukan oleh `flush`:
+
+```js
+function flush() {
+  const seen_callbacks = new Set()
+
+  do {
+    while (dirty_components.length) {
+      const component = dirty_components.shift()
+      set_current_component(component)
+      update(component.$$)
+    }
+
+    while (binding_callbacks.length) binding_callbacks.pop()()
+
+    for (let i = 0; i < render_callbacks.length; i += 1) {
+      const callback = render_callbacks[i]
+
+      if (!seen_callbacks.has(callback)) {
+        callback()
+        seen_callbacks.add(callback)
+      }
+    }
+
+    render_callbacks.length = 0
+  } while (dirty_components.length)
+
+  while (flush_callbacks.length) {
+    flush_callbacks.pop()()
+  }
+
+  update_scheduled = false
+}
+```
+
+Yang intinya apa? Mari kita fokus ke kode implementasinya:
+
+```js
+setTimeout(() => {
+  $$invalidate('lastName', lastName = 'Riz')
+}, 3000)
+```
+
+Kode diatas maksudnya adalah: Setelah 3 detik, ubah nilai `lastName` menjadi `Riz`. Sekarang
+kita ke baris selanjutnya:
+
+```js
+$$self.$$.update = ($$dirty = { firstName: 1, lastName: 1 }) => {
+  if ($$dirty.firstName || $$dirty.lastName) {
+    $$invalidate('fullName', fullName = `${firstName} ${lastName}`)
+  }
+}
+```
+
+Kode diatas adalah "callback" yang dipanggil ketika component menjadi "dirty" (terdapat perubahan
+dan belum diterapkan ke browser). Gak perlu ke distract oleh baris `{ firstName: 1, lastName: 1 }`, itu
+hanya default value untuk kasus variable `firstName` dan `lastName` tidak memiliki nilai.
+
+Svelte yang akan membuat kode diatas dengan catatan terdapat computed value (`$:`) di component kita
+yang mana nilainya bergantung dengan variable lain. Lalu, karena component menjadi dirty (terdapat
+perubahan di nilai `lastName`), maka Svelte akan memanggil `$$invalidate` lagi yang mana sudah kita
+bahas diatas (dari `make_dirty` sampai `flush`).
+
+Tidak ada library state management kompleks, tidak ada penggunaan "proxy", semua hanyalah variable.
+Plus, dengan alur perubahan yang efisien. Native JavaScript™. Bayangkan dengan React yang untuk
+menggunakan pendekatan "computed value" harus melakukan composing (atau bisa menggunakan API
+terbaru, `useEffect`), dan dengan Vue yang menggunakan "boilerplate" seperti:
+
+```js
+computed: {
+  someReference () {
+    return fromReference + anotherReference
+  }
+}
+```
+
+#### Purely Native
+
+Maksud "Purely native" disini adalah Svelte memang khusus untuk target browser. Dan juga, Svelte
+tidak membuat "abstraksi" lain, seperti Virtual DOM contohnya sebagai abstraksi dari DOM itu
+sendiri yang biasa digunakan untuk proses "diffing".
+
+
+### References
+
+- Frameworks without the framework: why didn't we think of this sooner?, https://svelte.dev/blog/frameworks-without-the-framework.
+-  Talking Svelte with Rich Harris, https://shoptalkshow.com/episodes/349.
+- Reactive Programming, https://en.wikipedia.org/wiki/Reactive_programming.
