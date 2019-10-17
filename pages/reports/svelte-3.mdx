@@ -648,9 +648,57 @@ Maksud "Purely native" disini adalah Svelte memang khusus untuk target browser. 
 tidak membuat "abstraksi" lain, seperti Virtual DOM contohnya sebagai abstraksi dari DOM itu
 sendiri yang biasa digunakan untuk proses "diffing".
 
+Svelte relatif sama seperti library lainnya: Untuk proses manipulasi DOM—khususnya proses
+composing DOM menjadi "component"—dan DOM yang dibuat oleh Svelte. Fitur-fitur lain yang ditawarkan
+oleh Svelte pun langsung berinteraksi dengan "native" API yang ditawarkan oleh browser, seperti
+untuk Reactivity yang tidak menggunakan pendekatan "object proxy" ataupun state management.
+
+#### Lifecycle
+
+Setiap "program" memiliki lifecycle, dokumen web pun memiliki lifecycle sendiri. Begitupula dengan
+komponen, komponen memiliki lifecycle nya sendiri yang ter-isolasi dari global (dokumen web) lifecycle.
+
+Lifecycle di Svelte ada 5: `onMount`, `onDestroy`, `beforeUpdate`, `afterUpdate` dan `tick`.
+
+##### onMount
+
+Method ini dipanggil ketika pertama kali component di render. Lifecycle ini adalah lifecycle yang
+umum di dunia UI component, hampir setiap library yang menawarkan composing DOM menjadi "component"
+memiliki lifecycle ini, yang berbeda hanyalah penamaan methodnya saja.
+
+##### onDestroy
+
+Method ini dipanggil ketika component di-unmount. Maksudnya, anggap kita memiliki component "Alert"
+yang menampilkan pesan selama 3 detik. Setelah 3 detik, alert tersebut akan hilang dan dilepas dari
+dom. Nah pada saat "pelepasan" tersebut, method `onDestroy` akan dipanggil.
+
+##### beforeUpdate dan afterUpdate
+
+Sesuai namanya, methods ini dipanggil sebelum/sesudah terjadinya perubahan terhadap DOM. Contoh
+sederhananya adalah ketika kita membuat aplikasi chatting, orang lain mengirim chat ke kita, dan
+kita harus melakukan _scrolling_ manual untuk bisa melihat chat terbaru dari mereka.
+
+Untuk menyelesaikan masalah ini, kita bisa menggunakan `afterUpdate`, untuk melakukan _scrolling_
+otomatis ketika terjadi perubahan terhadap DOM (ada data chat baru masuk).
+
+##### tick
+
+Ini adalah lifecycle yang unik, tidak semua library/framework memiliki API ini.
+
+`tick` pada dasarnya adalah untuk aktfitas _"langsung lakukan"_, karena tidak semua program
+didesain untuk "langsung lakukan sesuatu" ketika terjadi perubahan.
+
+Di konteks Svelte, setiap perubahan yang ada akan diterapkan ketika terjadi
+perubahan yang sifatnya [microtask](https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules/)
+di proses selanjutnya.
+
+Misal kamu ingin merubah suatu content di DOM secara langsung namun tanpa harus menunggu terjadinya
+perubahan microtask, kamu bisa menggunakan `tick`. `tick` ini keluarannya adalah `Promise` dan yang
+dilakukan `tick` adalah melakukan "menerapkan" perubahan (yang pending) secara "paksa".
 
 ### References
 
 - Frameworks without the framework: why didn't we think of this sooner?, https://svelte.dev/blog/frameworks-without-the-framework.
--  Talking Svelte with Rich Harris, https://shoptalkshow.com/episodes/349.
+- Talking Svelte with Rich Harris, https://shoptalkshow.com/episodes/349.
 - Reactive Programming, https://en.wikipedia.org/wiki/Reactive_programming.
+- Tasks, microtasks, queues and schedules, https://jakearchibald.com/2015/tasks-microtasks-queues-and-schedules.
